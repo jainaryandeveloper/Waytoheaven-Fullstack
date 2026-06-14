@@ -17,7 +17,16 @@ const app = express();
 
 connectDB();
 
-app.use(cors());
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "https://waytoheaven-fullstack-git-main-jainaryandevelopers-projects.vercel.app",
+      "https://waytoheaven-fullstack-dqjt0jlfm-jainaryandevelopers-projects.vercel.app",
+    ],
+    credentials: true,
+  })
+);
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 app.use("/api/auth", authRoutes);
