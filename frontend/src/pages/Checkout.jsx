@@ -169,11 +169,15 @@ export default function Checkout() {
         <div className="checkout-card">
           <h1>Checkout</h1>
 
-          <img
-            src={listing.image}
-            alt={listing.title}
-            className="checkout-image"
-          />
+         <img
+  src={
+    listing.images?.[0] ||
+    listing.image ||
+    "https://via.placeholder.com/900x500"
+  }
+  alt={listing.title}
+  className="checkout-image"
+/>
 
           <h2>{listing.title}</h2>
           <p>{listing.location}</p>
