@@ -26,7 +26,7 @@ const getListings = async (req, res) => {
                   0
                 ) / reviews.length
               ).toFixed(1)
-            : listing.rating;
+            : null;
 
         return {
           ...listing.toObject(),
@@ -72,7 +72,7 @@ const createListing = async (req, res) => {
       mapUrl: req.body.mapUrl,
       price: req.body.price,
       extraGuestCharge: req.body.extraGuestCharge,
-      rating: req.body.rating,
+      // rating: req.body.rating,
       images: imagePaths,
       owner: req.user.id,
     });
