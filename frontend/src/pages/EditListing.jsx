@@ -17,10 +17,10 @@ export default function EditListing() {
     images: [],
     price: "",
     extraGuestCharge: "",
-    // rating: "",
   });
 
   const [preview, setPreview] = useState([]);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     const fetchListing = async () => {
@@ -36,7 +36,6 @@ export default function EditListing() {
         price: response.data.price,
         extraGuestCharge:
           response.data.extraGuestCharge || "",
-        // rating: response.data.rating,
       });
 
       setPreview(response.data.images || []);
@@ -55,6 +54,8 @@ export default function EditListing() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    setUploading(true);
+
     try {
       const token = JSON.parse(
         localStorage.getItem("user")
@@ -70,7 +71,6 @@ export default function EditListing() {
         "extraGuestCharge",
         formData.extraGuestCharge
       );
-      // data.append("rating", formData.rating);
 
       formData.images.forEach((image) => {
         data.append("images", image);
@@ -89,9 +89,12 @@ export default function EditListing() {
 
       toast.success("Listing updated successfully!");
 
+      setUploading(false);
       navigate(`/listing/${id}`);
     } catch (error) {
       console.log(error);
+
+      setUploading(false);
 
       toast.error(
         error.response?.data?.message ||
@@ -118,6 +121,7 @@ export default function EditListing() {
             value={formData.title}
             onChange={handleChange}
             required
+            disabled={uploading}
           />
 
           <input
@@ -127,6 +131,7 @@ export default function EditListing() {
             value={formData.location}
             onChange={handleChange}
             required
+            disabled={uploading}
           />
 
           <input
@@ -136,6 +141,7 @@ export default function EditListing() {
             value={formData.mapUrl}
             onChange={handleChange}
             required
+            disabled={uploading}
           />
 
           <input
@@ -143,89 +149,83 @@ export default function EditListing() {
             name="images"
             accept="image/*"
             multiple
+            disabled={uploading}
             onChange={(e) => {
-              const files = Array.from(
-                e.target.files
-              );
+              const files = Array.from(e.target.files);
 
-              if (files.length > 7) {
+              const updatedImages = [
+                ...formData.images,
+                ...files,
+              ];
+
+              const updatedPreview = [
+                ...preview,
+                ...files.map((file) =>
+                  URL.createObjectURL(file)
+                ),
+              ];
+
+              if (updatedPreview.length > 7) {
                 toast.error(
                   "You can upload maximum 7 images"
                 );
+                e.target.value = "";
                 return;
               }
 
               setFormData({
                 ...formData,
-                images: files,
+                images: updatedImages,
               });
 
-              setPreview(
-                files.map((file) =>
-                  URL.createObjectURL(file)
-                )
-              );
+              setPreview(updatedPreview);
+
+              e.target.value = "";
             }}
           />
 
-         {preview.length > 0 && (
-  <div className="image-preview-grid">
+          {preview.length > 0 && (
+            <div className="image-preview-grid">
+              {preview.map((img, index) => (
+                <div
+                  className="preview-wrapper"
+                  key={index}
+                >
+                  <button
+                    type="button"
+                    className="remove-preview-btn"
+                    disabled={uploading}
+                    onClick={() => {
+                      const updatedPreview =
+                        preview.filter(
+                          (_, i) => i !== index
+                        );
 
-    {preview.map((img, index) => (
+                      const updatedImages =
+                        formData.images.filter(
+                          (_, i) => i !== index
+                        );
 
-      <div
-        className="preview-wrapper"
-        key={index}
-      >
+                      setPreview(updatedPreview);
 
-        <button
-          type="button"
-          className="remove-preview-btn"
+                      setFormData({
+                        ...formData,
+                        images: updatedImages,
+                      });
+                    }}
+                  >
+                    ×
+                  </button>
 
-          onClick={() => {
-
-            const updatedPreview =
-              preview.filter(
-                (_, i) =>
-                  i !== index
-              );
-
-            const updatedImages =
-              formData.images.filter(
-                (_, i) =>
-                  i !== index
-              );
-
-            setPreview(
-              updatedPreview
-            );
-
-            setFormData({
-              ...formData,
-              images:
-              updatedImages,
-            });
-
-          }}
-
-        >
-
-          ×
-
-        </button>
-
-        <img
-          src={img}
-          alt="Preview"
-          className="image-preview"
-        />
-
-      </div>
-
-    ))}
-
-  </div>
-)}
+                  <img
+                    src={img}
+                    alt="Preview"
+                    className="image-preview"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
 
           <input
             type="number"
@@ -234,6 +234,7 @@ export default function EditListing() {
             value={formData.price}
             onChange={handleChange}
             required
+            disabled={uploading}
           />
 
           <input
@@ -243,20 +244,24 @@ export default function EditListing() {
             value={formData.extraGuestCharge}
             onChange={handleChange}
             required
+            disabled={uploading}
           />
 
-          {/* <input
-            type="number"
-            step="0.1"
-            name="rating"
-            placeholder="Rating"
-            value={formData.rating}
-            onChange={handleChange}
-            required
-          /> */}
+          {uploading && (
+            <div className="uploading-box">
+              <div className="upload-spinner"></div>
+              <p>Uploading images, please wait...</p>
+            </div>
+          )}
 
-          <button type="submit">
-            Update Listing
+          <button
+            type="submit"
+            disabled={uploading}
+            className={uploading ? "disabled-btn" : ""}
+          >
+            {uploading
+              ? "Updating..."
+              : "Update Listing"}
           </button>
         </form>
       </div>
