@@ -31,11 +31,18 @@ if (!fs.existsSync(uploadDir)) {
 
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "https://waytoheaven-fullstack-git-main-jainaryandevelopers-projects.vercel.app",
-      "https://waytoheaven-fullstack-dqjt0jlfm-jainaryandevelopers-projects.vercel.app",
-    ],
+    origin: function (origin, callback) {
+      if (
+        !origin ||
+        origin === "http://localhost:5173" ||
+        origin === "https://waytoheaven-fullstack.vercel.app" ||
+        origin.endsWith(".vercel.app")
+      ) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
   })
 );
