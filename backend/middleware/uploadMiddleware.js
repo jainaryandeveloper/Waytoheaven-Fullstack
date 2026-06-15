@@ -1,41 +1,27 @@
 const multer = require("multer");
+const {
+  CloudinaryStorage,
+} = require("multer-storage-cloudinary");
 
-const storage = multer.diskStorage({
+const cloudinary = require("../config/cloudinary");
 
-  destination: function (
-    req,
-    file,
-    cb
-  ) {
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
 
-    cb(
-      null,
-      "uploads/"
-    );
+  params: {
+    folder: "waytoheaven-listings",
 
+    allowed_formats: [
+      "jpg",
+      "jpeg",
+      "png",
+      "webp",
+    ],
   },
-
-  filename: function (
-    req,
-    file,
-    cb
-  ) {
-
-    cb(
-      null,
-      Date.now() +
-      "-" +
-      file.originalname
-    );
-
-  },
-
 });
 
-const upload =
-multer({
+const upload = multer({
   storage,
 });
 
-module.exports =
-upload;
+module.exports = upload;

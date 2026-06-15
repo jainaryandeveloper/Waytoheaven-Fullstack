@@ -1,12 +1,12 @@
 const Listing = require("../models/Listing");
 const Review = require("../models/Review");
 
-const getImageUrl = (req, file) => {
-  const backendUrl =
-    process.env.BACKEND_URL || `${req.protocol}://${req.get("host")}`;
+// const getImageUrl = (req, file) => {
+//   const backendUrl =
+//     process.env.BACKEND_URL || `${req.protocol}://${req.get("host")}`;
 
-  return `${backendUrl}/uploads/${file.filename}`;
-};
+//   return `${backendUrl}/uploads/${file.filename}`;
+// };
 
 const getListings = async (req, res) => {
   try {
@@ -64,7 +64,9 @@ const getSingleListing = async (req, res) => {
 
 const createListing = async (req, res) => {
   try {
-    const imagePaths = req.files.map((file) => getImageUrl(req, file));
+    const imagePaths = req.files.map(
+  (file) => file.path
+);
 
     const listing = await Listing.create({
       title: req.body.title,
@@ -108,7 +110,7 @@ const updateListing = async (req, res) => {
 
     const imagePaths =
       req.files && req.files.length > 0
-        ? req.files.map((file) => getImageUrl(req, file))
+       ? req.files.map((file) => file.path)
         : listing.images;
 
     const updatedListing = await Listing.findByIdAndUpdate(
