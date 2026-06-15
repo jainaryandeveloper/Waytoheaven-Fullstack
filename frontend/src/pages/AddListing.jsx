@@ -20,6 +20,7 @@ export default function AddListing() {
 
   const [preview, setPreview] = useState([]);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const handleChange = (e) => {
     setFormData({
@@ -37,6 +38,7 @@ export default function AddListing() {
     }
 
     setUploading(true);
+    setUploadProgress(0);
 
     try {
       const token = JSON.parse(
@@ -67,6 +69,14 @@ export default function AddListing() {
             Authorization: `Bearer ${token}`,
             "Content-Type": "multipart/form-data",
           },
+          onUploadProgress: (progressEvent) => {
+  const percent = Math.round(
+    (progressEvent.loaded * 100) /
+      progressEvent.total
+  );
+
+  setUploadProgress(percent);
+},
         }
       );
 
@@ -232,7 +242,18 @@ export default function AddListing() {
             {uploading && (
               <div className="uploading-box">
                 <div className="upload-spinner"></div>
-                <p>Uploading images, please wait...</p>
+               <div className="upload-progress-info">
+  <p>Uploading images... {uploadProgress}%</p>
+
+  <div className="upload-progress-bar">
+    <div
+      className="upload-progress-fill"
+      style={{
+        width: `${uploadProgress}%`,
+      }}
+    ></div>
+  </div>
+</div>
               </div>
             )}
 

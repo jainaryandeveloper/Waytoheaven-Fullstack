@@ -29,6 +29,7 @@ export default function EditListing() {
 
   const [uploading, setUploading] =
     useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
 
   useEffect(() => {
     const fetchListing = async () => {
@@ -81,6 +82,7 @@ export default function EditListing() {
     }
 
     setUploading(true);
+    setUploadProgress(0);
 
     try {
       const token = JSON.parse(
@@ -109,16 +111,25 @@ export default function EditListing() {
         data.append("images", image);
       });
 
-      await axios.put(
-        `${import.meta.env.VITE_API_URL}/api/listings/${id}`,
-        data,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
-        }
+     await axios.put(
+  `${import.meta.env.VITE_API_URL}/api/listings/${id}`,
+  data,
+  {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "multipart/form-data",
+    },
+
+    onUploadProgress: (progressEvent) => {
+      const percent = Math.round(
+        (progressEvent.loaded * 100) /
+          progressEvent.total
       );
+
+      setUploadProgress(percent);
+    },
+  }
+);
 
       toast.success(
         "Listing updated successfully!"
@@ -329,10 +340,21 @@ export default function EditListing() {
             <div className="uploading-box">
               <div className="upload-spinner"></div>
 
-              <p>
-                Uploading images, please
-                wait...
-              </p>
+              <div className="upload-progress-info">
+  <p>
+    Uploading images...
+    {uploadProgress}%
+  </p>
+
+  <div className="upload-progress-bar">
+    <div
+      className="upload-progress-fill"
+      style={{
+        width: `${uploadProgress}%`,
+      }}
+    ></div>
+  </div>
+</div>
             </div>
           )}
 
