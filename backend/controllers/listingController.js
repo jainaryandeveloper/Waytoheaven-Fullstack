@@ -108,11 +108,23 @@ const updateListing = async (req, res) => {
       });
     }
 
-    const imagePaths =
-      req.files && req.files.length > 0
-       ? req.files.map((file) => file.path)
-        : listing.images;
+   let existingImages = [];
 
+if (req.body.existingImages) {
+  existingImages = Array.isArray(req.body.existingImages)
+    ? req.body.existingImages
+    : [req.body.existingImages];
+}
+
+const newImages =
+  req.files && req.files.length > 0
+    ? req.files.map((file) => file.path)
+    : [];
+
+const imagePaths = [
+  ...existingImages,
+  ...newImages,
+];
     const updatedListing = await Listing.findByIdAndUpdate(
       req.params.id,
       {

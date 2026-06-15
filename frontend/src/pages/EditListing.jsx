@@ -14,13 +14,21 @@ export default function EditListing() {
     title: "",
     location: "",
     mapUrl: "",
-    images: [],
     price: "",
     extraGuestCharge: "",
   });
 
-  const [preview, setPreview] = useState([]);
-  const [uploading, setUploading] = useState(false);
+  const [existingImages, setExistingImages] =
+    useState([]);
+
+  const [newImages, setNewImages] =
+    useState([]);
+
+  const [newPreviews, setNewPreviews] =
+    useState([]);
+
+  const [uploading, setUploading] =
+    useState(false);
 
   useEffect(() => {
     const fetchListing = async () => {
@@ -32,13 +40,14 @@ export default function EditListing() {
         title: response.data.title,
         location: response.data.location,
         mapUrl: response.data.mapUrl || "",
-        images: [],
         price: response.data.price,
         extraGuestCharge:
           response.data.extraGuestCharge || "",
       });
 
-      setPreview(response.data.images || []);
+      setExistingImages(
+        response.data.images || []
+      );
     };
 
     fetchListing();
@@ -51,8 +60,25 @@ export default function EditListing() {
     });
   };
 
+  const totalImages =
+    existingImages.length + newImages.length;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (totalImages === 0) {
+      toast.error(
+        "Please keep or upload at least one image"
+      );
+      return;
+    }
+
+    if (totalImages > 7) {
+      toast.error(
+        "You can upload maximum 7 images"
+      );
+      return;
+    }
 
     setUploading(true);
 
@@ -72,7 +98,14 @@ export default function EditListing() {
         formData.extraGuestCharge
       );
 
-      formData.images.forEach((image) => {
+      existingImages.forEach((imageUrl) => {
+        data.append(
+          "existingImages",
+          imageUrl
+        );
+      });
+
+      newImages.forEach((image) => {
         data.append("images", image);
       });
 
@@ -87,7 +120,9 @@ export default function EditListing() {
         }
       );
 
-      toast.success("Listing updated successfully!");
+      toast.success(
+        "Listing updated successfully!"
+      );
 
       setUploading(false);
       navigate(`/listing/${id}`);
@@ -151,21 +186,27 @@ export default function EditListing() {
             multiple
             disabled={uploading}
             onChange={(e) => {
-              const files = Array.from(e.target.files);
+              const files = Array.from(
+                e.target.files
+              );
 
-              const updatedImages = [
-                ...formData.images,
+              const updatedNewImages = [
+                ...newImages,
                 ...files,
               ];
 
-              const updatedPreview = [
-                ...preview,
+              const updatedNewPreviews = [
+                ...newPreviews,
                 ...files.map((file) =>
                   URL.createObjectURL(file)
                 ),
               ];
 
-              if (updatedPreview.length > 7) {
+              if (
+                existingImages.length +
+                  updatedNewImages.length >
+                7
+              ) {
                 toast.error(
                   "You can upload maximum 7 images"
                 );
@@ -173,57 +214,86 @@ export default function EditListing() {
                 return;
               }
 
-              setFormData({
-                ...formData,
-                images: updatedImages,
-              });
-
-              setPreview(updatedPreview);
+              setNewImages(updatedNewImages);
+              setNewPreviews(
+                updatedNewPreviews
+              );
 
               e.target.value = "";
             }}
           />
 
-          {preview.length > 0 && (
+          {(existingImages.length > 0 ||
+            newPreviews.length > 0) && (
             <div className="image-preview-grid">
-              {preview.map((img, index) => (
-                <div
-                  className="preview-wrapper"
-                  key={index}
-                >
-                  <button
-                    type="button"
-                    className="remove-preview-btn"
-                    disabled={uploading}
-                    onClick={() => {
-                      const updatedPreview =
-                        preview.filter(
-                          (_, i) => i !== index
-                        );
-
-                      const updatedImages =
-                        formData.images.filter(
-                          (_, i) => i !== index
-                        );
-
-                      setPreview(updatedPreview);
-
-                      setFormData({
-                        ...formData,
-                        images: updatedImages,
-                      });
-                    }}
+              {existingImages.map(
+                (img, index) => (
+                  <div
+                    className="preview-wrapper"
+                    key={`old-${index}`}
                   >
-                    ×
-                  </button>
+                    <button
+                      type="button"
+                      className="remove-preview-btn"
+                      disabled={uploading}
+                      onClick={() => {
+                        setExistingImages(
+                          existingImages.filter(
+                            (_, i) =>
+                              i !== index
+                          )
+                        );
+                      }}
+                    >
+                      ×
+                    </button>
 
-                  <img
-                    src={img}
-                    alt="Preview"
-                    className="image-preview"
-                  />
-                </div>
-              ))}
+                    <img
+                      src={img}
+                      alt="Existing Preview"
+                      className="image-preview"
+                    />
+                  </div>
+                )
+              )}
+
+              {newPreviews.map(
+                (img, index) => (
+                  <div
+                    className="preview-wrapper"
+                    key={`new-${index}`}
+                  >
+                    <button
+                      type="button"
+                      className="remove-preview-btn"
+                      disabled={uploading}
+                      onClick={() => {
+                        setNewPreviews(
+                          newPreviews.filter(
+                            (_, i) =>
+                              i !== index
+                          )
+                        );
+
+                        setNewImages(
+                          newImages.filter(
+                            (_, i) =>
+                              i !== index
+                          )
+                        );
+                      }}
+                    >
+                      ×
+                    </button>
+
+                    <img
+                      src={img}
+                      alt="New Preview"
+                      className="image-preview"
+                    />
+                  </div>
+                )
+              )}
             </div>
           )}
 
@@ -241,23 +311,37 @@ export default function EditListing() {
             type="number"
             name="extraGuestCharge"
             placeholder="Extra charge per guest"
-            value={formData.extraGuestCharge}
+            value={
+              formData.extraGuestCharge
+            }
             onChange={handleChange}
             required
             disabled={uploading}
           />
 
+          <div className="rating-info-box">
+            ⭐ Ratings are automatically
+            calculated from guest reviews
+            after bookings.
+          </div>
+
           {uploading && (
             <div className="uploading-box">
               <div className="upload-spinner"></div>
-              <p>Uploading images, please wait...</p>
+
+              <p>
+                Uploading images, please
+                wait...
+              </p>
             </div>
           )}
 
           <button
             type="submit"
             disabled={uploading}
-            className={uploading ? "disabled-btn" : ""}
+            className={
+              uploading ? "disabled-btn" : ""
+            }
           >
             {uploading
               ? "Updating..."
