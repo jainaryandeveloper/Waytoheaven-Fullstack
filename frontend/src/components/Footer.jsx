@@ -2,7 +2,7 @@ export default function Footer() {
   return (
     <footer className="footer">
       <div>
-        <h3>airbnb</h3>
+        <h3>Waytoheaven</h3>
         <p>Book unique stays and experiences around India.</p>
       </div>
 

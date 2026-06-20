@@ -143,18 +143,16 @@ export default function MyBookings() {
   </h3>
 
 </div>
-      <button
-  className="cancel-booking-btn"
-  onClick={() =>
-    handleCancelBooking(
-      booking._id
-    )
-  }
->
-
-  Cancel Booking
-
-</button>
+      {new Date(booking.checkIn) > new Date() && (
+  <button
+    className="cancel-booking-btn"
+    onClick={() =>
+      handleCancelBooking(booking._id)
+    }
+  >
+    Cancel Booking
+  </button>
+)}
     </div>
   ))
 )}
