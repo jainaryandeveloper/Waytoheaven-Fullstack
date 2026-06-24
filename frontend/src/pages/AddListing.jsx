@@ -29,40 +29,6 @@ export default function AddListing() {
     });
   };
 
-  const handleImageChange = (e) => {
-    const files = Array.from(e.target.files);
-
-    if (files.length === 0) return;
-
-    const updatedImages = [...formData.images, ...files];
-
-    if (updatedImages.length > 7) {
-      toast.error("You can upload maximum 7 images");
-      return;
-    }
-
-    setFormData({
-      ...formData,
-      images: updatedImages,
-    });
-
-    setPreview([
-      ...preview,
-      ...files.map((file) => URL.createObjectURL(file)),
-    ]);
-
-    e.target.value = "";
-  };
-
-  const removeImage = (index) => {
-    setPreview(preview.filter((_, i) => i !== index));
-
-    setFormData({
-      ...formData,
-      images: formData.images.filter((_, i) => i !== index),
-    });
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -71,67 +37,62 @@ export default function AddListing() {
       return;
     }
 
+    setUploading(true);
+    setUploadProgress(0);
+
     try {
-      setUploading(true);
-      setUploadProgress(0);
-
-      const user = JSON.parse(localStorage.getItem("user"));
-
-      if (!user?.token) {
-        toast.error("Please login first");
-        navigate("/login");
-        return;
-      }
+      const token = JSON.parse(
+        localStorage.getItem("user")
+      )?.token;
 
       const data = new FormData();
 
       data.append("title", formData.title);
       data.append("location", formData.location);
       data.append("mapUrl", formData.mapUrl);
+
+      formData.images.forEach((image) => {
+        data.append("images", image);
+      });
+
       data.append("price", formData.price);
       data.append(
         "extraGuestCharge",
         formData.extraGuestCharge
       );
 
-      formData.images.forEach((image) => {
-        data.append("images", image);
-      });
-
-      const response = await axios.post(
+      await axios.post(
         `${import.meta.env.VITE_API_URL}/api/listings`,
         data,
         {
           headers: {
-            Authorization: `Bearer ${user.token}`,
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
           },
           onUploadProgress: (progressEvent) => {
-            if (progressEvent.total) {
-              const percent = Math.round(
-                (progressEvent.loaded * 100) /
-                  progressEvent.total
-              );
+  const percent = Math.round(
+    (progressEvent.loaded * 100) /
+      progressEvent.total
+  );
 
-              setUploadProgress(percent);
-            }
-          },
+  setUploadProgress(percent);
+},
         }
       );
 
-      console.log(response.data);
-
       toast.success("Listing added successfully!");
 
+      setUploading(false);
       navigate("/");
     } catch (error) {
-      console.log("ADD LISTING ERROR:", error);
+      console.log(error);
+
+      setUploading(false);
 
       toast.error(
         error.response?.data?.message ||
           "Failed to add listing"
       );
-    } finally {
-      setUploading(false);
     }
   };
 
@@ -179,7 +140,37 @@ export default function AddListing() {
               accept="image/*"
               multiple
               disabled={uploading}
-              onChange={handleImageChange}
+              onChange={(e) => {
+                const files = Array.from(e.target.files);
+
+                const updatedImages = [
+                  ...formData.images,
+                  ...files,
+                ];
+
+                if (updatedImages.length > 7) {
+                  toast.error(
+                    "You can upload maximum 7 images"
+                  );
+                  e.target.value = "";
+                  return;
+                }
+
+                setFormData({
+                  ...formData,
+                  images: updatedImages,
+                });
+
+                setPreview([
+                  ...preview,
+                  ...files.map((file) =>
+                    URL.createObjectURL(file)
+                  ),
+                ]);
+
+                e.target.value = "";
+              }}
+              required
             />
 
             {preview.length > 0 && (
@@ -192,9 +183,25 @@ export default function AddListing() {
                     <button
                       type="button"
                       className="remove-preview-btn"
-                      onClick={() =>
-                        removeImage(index)
-                      }
+                      disabled={uploading}
+                      onClick={() => {
+                        const updatedPreview =
+                          preview.filter(
+                            (_, i) => i !== index
+                          );
+
+                        const updatedImages =
+                          formData.images.filter(
+                            (_, i) => i !== index
+                          );
+
+                        setPreview(updatedPreview);
+
+                        setFormData({
+                          ...formData,
+                          images: updatedImages,
+                        });
+                      }}
                     >
                       ×
                     </button>
@@ -235,31 +242,25 @@ export default function AddListing() {
             {uploading && (
               <div className="uploading-box">
                 <div className="upload-spinner"></div>
+               <div className="upload-progress-info">
+  <p>Uploading images... {uploadProgress}%</p>
 
-                <div className="upload-progress-info">
-                  <p>
-                    Uploading images...
-                    {uploadProgress}%
-                  </p>
-
-                  <div className="upload-progress-bar">
-                    <div
-                      className="upload-progress-fill"
-                      style={{
-                        width: `${uploadProgress}%`,
-                      }}
-                    ></div>
-                  </div>
-                </div>
+  <div className="upload-progress-bar">
+    <div
+      className="upload-progress-fill"
+      style={{
+        width: `${uploadProgress}%`,
+      }}
+    ></div>
+  </div>
+</div>
               </div>
             )}
 
             <button
               type="submit"
               disabled={uploading}
-              className={
-                uploading ? "disabled-btn" : ""
-              }
+              className={uploading ? "disabled-btn" : ""}
             >
               {uploading
                 ? "Uploading..."
