@@ -29,6 +29,56 @@ export default function AddListing() {
     });
   };
 
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files);
+
+    if (files.length === 0) return;
+
+    const updatedImages = [
+      ...formData.images,
+      ...files,
+    ];
+
+    if (updatedImages.length > 7) {
+      toast.error("You can upload maximum 7 images");
+      e.target.value = "";
+      return;
+    }
+
+    setFormData({
+      ...formData,
+      images: updatedImages,
+    });
+
+    const newPreviews = files.map((file) =>
+      URL.createObjectURL(file)
+    );
+
+    setPreview([
+      ...preview,
+      ...newPreviews,
+    ]);
+
+    e.target.value = "";
+  };
+
+  const removeImage = (index) => {
+    const updatedPreview = preview.filter(
+      (_, i) => i !== index
+    );
+
+    const updatedImages = formData.images.filter(
+      (_, i) => i !== index
+    );
+
+    setPreview(updatedPreview);
+
+    setFormData({
+      ...formData,
+      images: updatedImages,
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -41,9 +91,15 @@ export default function AddListing() {
     setUploadProgress(0);
 
     try {
-      const token = JSON.parse(
+      const user = JSON.parse(
         localStorage.getItem("user")
-      )?.token;
+      );
+
+      if (!user || !user.token) {
+        toast.error("Please login first");
+        setUploading(false);
+        return;
+      }
 
       const data = new FormData();
 
@@ -66,17 +122,19 @@ export default function AddListing() {
         data,
         {
           headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${user.token}`,
           },
-          onUploadProgress: (progressEvent) => {
-  const percent = Math.round(
-    (progressEvent.loaded * 100) /
-      progressEvent.total
-  );
 
-  setUploadProgress(percent);
-},
+          onUploadProgress: (progressEvent) => {
+            if (!progressEvent.total) return;
+
+            const percent = Math.round(
+              (progressEvent.loaded * 100) /
+                progressEvent.total
+            );
+
+            setUploadProgress(percent);
+          },
         }
       );
 
@@ -115,6 +173,7 @@ export default function AddListing() {
               value={formData.title}
               onChange={handleChange}
               required
+              disabled={uploading}
             />
 
             <input
@@ -124,6 +183,7 @@ export default function AddListing() {
               value={formData.location}
               onChange={handleChange}
               required
+              disabled={uploading}
             />
 
             <input
@@ -132,6 +192,7 @@ export default function AddListing() {
               placeholder="Google Maps Embed URL"
               value={formData.mapUrl}
               onChange={handleChange}
+              disabled={uploading}
             />
 
             <input
@@ -140,37 +201,7 @@ export default function AddListing() {
               accept="image/*"
               multiple
               disabled={uploading}
-              onChange={(e) => {
-                const files = Array.from(e.target.files);
-
-                const updatedImages = [
-                  ...formData.images,
-                  ...files,
-                ];
-
-                if (updatedImages.length > 7) {
-                  toast.error(
-                    "You can upload maximum 7 images"
-                  );
-                  e.target.value = "";
-                  return;
-                }
-
-                setFormData({
-                  ...formData,
-                  images: updatedImages,
-                });
-
-                setPreview([
-                  ...preview,
-                  ...files.map((file) =>
-                    URL.createObjectURL(file)
-                  ),
-                ]);
-
-                e.target.value = "";
-              }}
-              required
+              onChange={handleFileChange}
             />
 
             {preview.length > 0 && (
@@ -184,24 +215,7 @@ export default function AddListing() {
                       type="button"
                       className="remove-preview-btn"
                       disabled={uploading}
-                      onClick={() => {
-                        const updatedPreview =
-                          preview.filter(
-                            (_, i) => i !== index
-                          );
-
-                        const updatedImages =
-                          formData.images.filter(
-                            (_, i) => i !== index
-                          );
-
-                        setPreview(updatedPreview);
-
-                        setFormData({
-                          ...formData,
-                          images: updatedImages,
-                        });
-                      }}
+                      onClick={() => removeImage(index)}
                     >
                       ×
                     </button>
@@ -223,6 +237,7 @@ export default function AddListing() {
               value={formData.price}
               onChange={handleChange}
               required
+              disabled={uploading}
             />
 
             <input
@@ -232,6 +247,7 @@ export default function AddListing() {
               value={formData.extraGuestCharge}
               onChange={handleChange}
               required
+              disabled={uploading}
             />
 
             <div className="rating-info-box">
@@ -242,18 +258,21 @@ export default function AddListing() {
             {uploading && (
               <div className="uploading-box">
                 <div className="upload-spinner"></div>
-               <div className="upload-progress-info">
-  <p>Uploading images... {uploadProgress}%</p>
 
-  <div className="upload-progress-bar">
-    <div
-      className="upload-progress-fill"
-      style={{
-        width: `${uploadProgress}%`,
-      }}
-    ></div>
-  </div>
-</div>
+                <div className="upload-progress-info">
+                  <p>
+                    Uploading images... {uploadProgress}%
+                  </p>
+
+                  <div className="upload-progress-bar">
+                    <div
+                      className="upload-progress-fill"
+                      style={{
+                        width: `${uploadProgress}%`,
+                      }}
+                    ></div>
+                  </div>
+                </div>
               </div>
             )}
 
