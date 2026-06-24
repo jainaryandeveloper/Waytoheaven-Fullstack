@@ -58,7 +58,7 @@ export default function Checkout() {
       data.currency,
 
       name:
-      "WayToHeaven",
+      "Waytoheaven",
 
       description:
       listing.title,
