@@ -58,7 +58,7 @@ export default function Checkout() {
       data.currency,
 
       name:
-      "Airbnb Clone",
+      "WayToHeaven",
 
       description:
       listing.title,
